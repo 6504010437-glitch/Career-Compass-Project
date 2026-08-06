@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เข็มทิศอาชีพ — ค้นหาเส้นทางของคุณ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFDF1;
+    --ink:#3E5661;
+    --ink-soft:#7C97A0;
+    --paper:#FFFFFF;
+    --paper-dim:#BFDFE2;
+    --text-dark:#3E5661;
+    --text-light:#3E5661;
+    --gold:#FFD87B;
+    --gold-text:#C9862A;
+    --teal:#4E8A99;
+    --coral:#D97756;
+    --blue-soft:#D7EDEF;
+    --blue:#BFDFE2;
+    --yellow-soft:#FEFAC2;
+    --peach:#FFD3B6;
+    --line: rgba(62,86,97,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text-light);
+    font-family:'Noto Sans Thai', sans-serif;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  .stage{
+    max-width:720px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    padding:28px 20px 60px;
+    position:relative;
+  }
+
+  /* background texture: confetti sparkles in the palette's own colors */
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background-image:
+      radial-gradient(circle, rgba(255,216,123,0.35) 2px, transparent 2px),
+      radial-gradient(circle, rgba(191,223,226,0.45) 2px, transparent 2px),
+      radial-gradient(circle, rgba(255,211,182,0.4) 2px, transparent 2px);
+    background-size: 46px 46px, 60px 60px, 38px 38px;
+    background-position: 0 0, 20px 25px, 10px 35px;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+    z-index:1;
+  }
+  .brand{
+    font-family:'Mali', cursive;
+    font-weight:600;
+    font-size:15px;
+    letter-spacing:0.04em;
+    color:var(--gold-text);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .brand-mark{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--coral);
+    display:inline-block;
+  }
+  .progress-count{
+    font-family:'Space Mono', monospace;
+    font-size:12px;
+    color:var(--text-light);
+    opacity:0.6;
+  }
+
+  /* NEEDLE */
+  .needle-wrap{
+    width:46px;height:46px;
+    position:relative;
+    flex-shrink:0;
+  }
+  .needle-wrap svg{width:100%;height:100%;display:block;}
+  #needle{
+    transform-origin:50% 50%;
+    transition: transform 0.7s cubic-bezier(.34,1.56,.64,1);
+  }
+
+  /* SCREENS */
+  .screen{display:none;flex-direction:column;flex:1;z-index:1;}
+  .screen.active{display:flex;}
+
+  /* INTRO */
+  .intro{justify-content:center;align-items:flex-start;text-align:left;padding-top:8vh;}
+  .eyebrow{
+    font-family:'Space Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    color:var(--teal);
+    text-transform:uppercase;
+    margin-bottom:18px;
+  }
+  .intro h1{
+    font-family:'Mali', cursive;
+    font-size:clamp(34px,7vw,52px);
+    line-height:1.15;
+    margin:0 0 20px;
+    color:var(--text-light);
+  }
+  .intro h1 em{
+    font-style:normal;
+    color:var(--gold-text);
+  }
+  .intro p{
+    font-size:16px;
+    line-height:1.8;
+    color:var(--text-light);
+    opacity:0.82;
+    max-width:52ch;
+    margin:0 0 14px;
+  }
+  .intro-compass-wrap{
+    position:relative;
+    align-self:center;
+    margin:34px 0 14px;
+    width:260px;height:260px;
+  }
+  .intro-compass{
+    width:100%;height:100%;
+    display:block;
+  }
+  .meta-row{
+    display:flex;
+    gap:22px;
+    margin:26px 0 34px;
+    flex-wrap:wrap;
+  }
+  .meta-item{
+    font-family:'Space Mono', monospace;
+    font-size:12px;
+    color:var(--text-light);
+    opacity:0.65;
+    border-left:2px solid var(--gold-text);
+    padding-left:10px;
+  }
+  .meta-item b{display:block;font-size:15px;color:var(--ink);font-family:'Noto Sans Thai';opacity:1;margin-top:2px;}
+
+  .btn{
+    font-family:'Noto Sans Thai', sans-serif;
+    font-weight:700;
+    font-size:16px;
+    padding:15px 30px;
+    border-radius:999px;
+    border:none;
+    cursor:pointer;
+    background:var(--gold);
+    color:var(--ink);
+    letter-spacing:0.01em;
+    transition:transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    box-shadow:0 6px 0 rgba(62,86,97,0.22);
+  }
+  .btn:hover{transform:translateY(-2px);}
+  .btn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(62,86,97,0.22);}
+  .btn.ghost{
+    background:transparent;
+    color:var(--ink);
+    border:1.5px solid var(--teal);
+    box-shadow:none;
+  }
+  .btn.ghost:hover{border-color:var(--gold-text);color:var(--gold-text);}
+
+  /* PROGRESS TRAIL */
+  .trail{
+    display:flex;
+    gap:5px;
+    margin:20px 0 10px;
+    z-index:1;
+  }
+  .trail i{
+    flex:1;
+    height:4px;
+    border-radius:4px;
+    background:var(--ink-soft);
+    overflow:hidden;
+    position:relative;
+  }
+  .trail i.done{background:var(--gold);}
+  .trail i.current{background:var(--ink-soft);}
+  .trail i.current::after{
+    content:"";
+    position:absolute; inset:0;
+    background:var(--teal);
+    animation:none;
+  }
+
+  /* QUESTION CARD */
+  .question-screen{justify-content:flex-start;padding-top:6vh;}
+  .q-index{
+    font-family:'Space Mono', monospace;
+    color:var(--coral);
+    font-size:13px;
+    margin:26px 0 12px;
+    letter-spacing:0.05em;
+  }
+  .q-card{
+    background:var(--paper);
+    color:var(--text-dark);
+    border-radius:18px;
+    padding:34px 28px;
+    box-shadow:0 18px 40px rgba(62,86,97,0.15);
+    position:relative;
+    border:1px solid var(--paper-dim);
+  }
+  .q-card::before{
+    content:"";
+    position:absolute;
+    top:14px;left:14px;right:14px;bottom:14px;
+    border:1px dashed rgba(33,26,18,0.15);
+    border-radius:12px;
+    pointer-events:none;
+  }
+  .q-text{
+    font-family:'Mali', cursive;
+    font-size:clamp(19px,3.6vw,24px);
+    line-height:1.6;
+    font-weight:600;
+    margin:0 0 26px;
+  }
+  .options{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .opt-btn{
+    text-align:left;
+    background:#fff;
+    border:1.5px solid var(--paper-dim);
+    border-radius:12px;
+    padding:14px 16px;
+    font-family:'Noto Sans Thai';
+    font-size:15px;
+    color:var(--text-dark);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    transition:all 0.15s ease;
+  }
+  .opt-btn:hover{border-color:var(--teal);background:#FBF8F1;transform:translateX(3px);}
+  .opt-dot{
+    width:10px;height:10px;border-radius:50%;
+    border:2px solid var(--teal);
+    flex-shrink:0;
+  }
+  .opt-btn:nth-child(1) .opt-dot{background:transparent;}
+  .opt-btn:nth-child(2) .opt-dot{background:var(--teal);opacity:0.4;}
+  .opt-btn:nth-child(3) .opt-dot{background:var(--teal);opacity:0.7;}
+  .opt-btn:nth-child(4) .opt-dot{background:var(--teal);opacity:1;}
+
+  .nav-row{
+    display:flex;
+    justify-content:space-between;
+    margin-top:22px;
+  }
+  .link-btn{
+    background:none;border:none;
+    color:var(--text-light);
+    opacity:0.55;
+    font-family:'Noto Sans Thai';
+    font-size:14px;
+    cursor:pointer;
+  }
+  .link-btn:hover{opacity:0.9;}
+
+  /* RESULT */
+  .result-screen{padding-top:4vh;}
+  .result-eyebrow{
+    font-family:'Space Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    color:var(--teal);
+    text-transform:uppercase;
+  }
+  .result-title{
+    font-family:'Mali', cursive;
+    font-size:clamp(30px,6vw,42px);
+    margin:10px 0 4px;
+    color:var(--gold-text);
+  }
+  .result-code{
+    font-family:'Space Mono', monospace;
+    font-size:13px;
+    opacity:0.6;
+    margin-bottom:26px;
+  }
+  .chart-wrap{
+    display:flex;
+    justify-content:center;
+    margin:10px 0 24px;
+  }
+  .result-desc{
+    background:var(--paper);
+    color:var(--text-dark);
+    border-radius:16px;
+    padding:24px 24px;
+    line-height:1.8;
+    font-size:15.5px;
+    margin-bottom:22px;
+  }
+  .result-desc b{font-family:'Mali';font-size:18px;display:block;margin-bottom:6px;}
+  .section-label{
+    font-family:'Space Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.1em;
+    color:var(--gold-text);
+    text-transform:uppercase;
+    margin:22px 0 10px;
+  }
+  .chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:6px;
+  }
+  .chip{
+    background:var(--blue-soft);
+    border:1px solid var(--blue);
+    color:var(--ink);
+    padding:8px 14px;
+    border-radius:999px;
+    font-size:13.5px;
+  }
+  .secondary-block{
+    margin-top:30px;
+    border-top:1px dashed var(--line);
+    padding-top:22px;
+  }
+  .secondary-title{
+    font-family:'Mali';
+    font-size:18px;
+    color:var(--ink);
+    margin-bottom:6px;
+  }
+  .secondary-title span{color:var(--coral);}
+  .secondary-desc{
+    font-size:14px;
+    opacity:0.75;
+    line-height:1.7;
+    margin-bottom:12px;
+  }
+  .result-actions{
+    display:flex;
+    gap:12px;
+    margin-top:34px;
+    flex-wrap:wrap;
+  }
+  .footnote{
+    margin-top:30px;
+    font-size:12px;
+    opacity:0.45;
+    line-height:1.7;
+  }
+
+  /* MAJOR DETAIL + PLANNING */
+  .chip.clickable{cursor:pointer;border:1px solid transparent;transition:all 0.15s ease;}
+  .chip.clickable:hover{border-color:var(--gold-text);color:var(--gold-text);}
+  .chip.active{background:var(--gold);color:var(--ink);font-weight:700;}
+
+  .detail-card{
+    background:var(--paper);
+    color:var(--text-dark);
+    border-radius:14px;
+    padding:20px 22px;
+    margin-top:12px;
+    animation:fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+  .detail-card h4{
+    font-family:'Mali';
+    margin:0 0 12px;
+    font-size:17px;
+    color:var(--coral);
+  }
+  .detail-row{margin-bottom:10px;font-size:14px;line-height:1.7;}
+  .detail-row b{
+    display:inline-block;
+    font-family:'Space Mono';
+    font-size:11px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--teal);
+    margin-right:6px;
+  }
+  .detail-note{
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px dashed var(--paper-dim);
+    font-size:13px;
+    opacity:0.85;
+    line-height:1.7;
+  }
+
+  .plan-block{
+    margin-top:34px;
+    border-top:1px dashed var(--line);
+    padding-top:24px;
+  }
+  .plan-intro{
+    font-size:14px;
+    line-height:1.8;
+    opacity:0.78;
+    margin:0 0 18px;
+    max-width:60ch;
+  }
+  .plan-label{
+    display:block;
+    font-family:'Space Mono', monospace;
+    font-size:11.5px;
+    letter-spacing:0.04em;
+    color:var(--ink);
+    opacity:0.75;
+    margin:14px 0 6px;
+  }
+  .major-select{
+    width:100%;
+    padding:12px 14px;
+    border-radius:10px;
+    border:1.5px solid var(--paper-dim);
+    background:var(--paper);
+    color:var(--text-dark);
+    font-family:'Noto Sans Thai';
+    font-size:14.5px;
+  }
+  .wdep-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-top:6px;
+  }
+  .wdep-item .plan-label{margin-top:0;}
+  .wdep-input{
+    width:100%;
+    padding:12px 14px;
+    border-radius:10px;
+    border:1.5px solid var(--paper-dim);
+    background:var(--paper);
+    color:var(--text-dark);
+    font-family:'Noto Sans Thai';
+    font-size:14px;
+    line-height:1.6;
+    resize:vertical;
+  }
+  .wdep-input::placeholder{opacity:0.5;}
+
+  @media (max-width:520px){
+    .wdep-grid{grid-template-columns:1fr;}
+  }
+
+  /* DISCLAIMER BANNER */
+  .disclaimer-banner{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    background:var(--yellow-soft);
+    color:#6B5117;
+    border:2px dashed var(--gold-text);
+    border-radius:16px;
+    padding:14px 16px;
+    font-size:14px;
+    line-height:1.7;
+    margin:16px 0 20px;
+  }
+  .disclaimer-icon{font-size:20px;flex-shrink:0;line-height:1.4;}
+
+  /* WDEP LEGEND */
+  .wdep-legend{
+    list-style:none;
+    padding:0;
+    margin:0 0 18px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .wdep-legend li{
+    font-size:13.5px;
+    opacity:0.85;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .wdep-letter{
+    font-family:'Space Mono', monospace;
+    font-weight:700;
+    font-size:13px;
+    background:var(--coral);
+    color:var(--paper);
+    width:24px;height:24px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+
+  .legend-intro{
+    font-size:13.5px;
+    line-height:1.8;
+    opacity:0.78;
+    margin:0 0 14px;
+    max-width:62ch;
+  }
+  .legend-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-bottom:8px;
+  }
+  .legend-card{
+    background:var(--paper);
+    border:2px solid transparent;
+    border-radius:16px;
+    padding:14px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    gap:6px;
+  }
+  .legend-card.is-match{
+    border-color:var(--gold);
+    background:var(--yellow-soft);
+  }
+  .legend-badge{
+    font-family:'Space Mono', monospace;
+    font-weight:700;
+    font-size:11px;
+    color:var(--gold-text);
+  }
+  .legend-name{
+    font-family:'Mali';
+    font-weight:700;
+    font-size:15px;
+    color:var(--ink);
+  }
+  .legend-desc{
+    font-size:12px;
+    line-height:1.6;
+    opacity:0.82;
+  }
+  .legend-star{font-size:12px;color:var(--gold-text);}
+
+  @media (max-width:420px){
+    .legend-grid{grid-template-columns:1fr;}
+  }
+
+  /* FINISH BLOCK */
+  .finish-block{
+    margin-top:30px;
+    background:linear-gradient(180deg, rgba(255,216,123,0.20), rgba(191,223,226,0.30));
+    border:2px dashed var(--paper-dim);
+    border-radius:22px;
+    padding:28px 22px 26px;
+    text-align:center;
+  }
+  .finish-mascot{width:130px;height:130px;margin:0 auto 6px;display:block;}
+  .finish-title{
+    font-family:'Mali';
+    font-weight:700;
+    font-size:22px;
+    color:var(--gold-text);
+    margin-bottom:12px;
+  }
+  .finish-text{
+    font-size:14.5px;
+    line-height:1.9;
+    opacity:0.92;
+    max-width:56ch;
+    margin:0 auto;
+  }
+
+  @media (max-width:480px){
+    .q-card{padding:26px 18px;}
+    .meta-row{gap:14px;}
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="topbar">
+    <div class="brand"><span class="brand-mark"></span>เข็มทิศอาชีพ</div>
+    <div class="needle-wrap" id="needleWrap">
+      <svg viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(62,86,97,0.25)" stroke-width="2"/>
+        <g id="needle">
+          <polygon points="50,10 56,50 50,90 44,50" fill="var(--gold)"/>
+          <circle cx="50" cy="50" r="7" fill="var(--ink)" stroke="var(--coral)" stroke-width="2"/>
+          <circle cx="47" cy="48" r="1.4" fill="#fff"/>
+          <circle cx="53" cy="48" r="1.4" fill="#fff"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- INTRO -->
+  <div class="screen active" id="screen-intro">
+    <div class="intro">
+      <div class="eyebrow">แบบสำรวจแนวโน้มอาชีพ · ใช้เวลาประมาณ 5 นาที</div>
+      <h1>ค้นหา<em>เข็มทิศ</em><br>อาชีพของคุณ</h1>
+      <p>ตอบคำถาม 18 ข้อตามความรู้สึกจริง ๆ ของคุณ ไม่มีคำตอบถูกหรือผิด ระบบจะประมวลผลแนวโน้มความถนัด 6 ด้าน เพื่อช่วยชี้ทิศทางอาชีพและสาขาที่เรียนต่อได้เหมาะกับตัวคุณมากที่สุด</p>
+    </div>
+
+    <div class="intro-compass-wrap">
+      <svg class="intro-compass" viewBox="0 0 260 260">
+        <!-- outer ring -->
+        <circle cx="130" cy="130" r="118" fill="var(--paper)" stroke="var(--gold)" stroke-width="6"/>
+        <circle cx="130" cy="130" r="100" fill="none" stroke="var(--paper-dim)" stroke-width="2"/>
+        <!-- tick marks -->
+        <g stroke="var(--paper-dim)" stroke-width="2">
+          <line x1="130" y1="14" x2="130" y2="26"/>
+          <line x1="130" y1="234" x2="130" y2="246"/>
+          <line x1="14" y1="130" x2="26" y2="130"/>
+          <line x1="234" y1="130" x2="246" y2="130"/>
+          <line x1="47" y1="47" x2="55" y2="55"/>
+          <line x1="205" y1="205" x2="213" y2="213"/>
+          <line x1="47" y1="213" x2="55" y2="205"/>
+          <line x1="205" y1="55" x2="213" y2="47"/>
+        </g>
+        <!-- RIASEC labels on pills -->
+        <g font-family="Space Mono" font-size="15" font-weight="700" text-anchor="middle">
+          <circle cx="130" cy="30" r="15" fill="var(--gold)"/>
+          <text x="130" y="35" fill="var(--ink)">R</text>
+          <circle cx="222" cy="76" r="15" fill="var(--blue)"/>
+          <text x="222" y="81" fill="var(--ink)">I</text>
+          <circle cx="222" cy="184" r="15" fill="var(--peach)"/>
+          <text x="222" y="189" fill="var(--ink)">A</text>
+          <circle cx="130" cy="230" r="15" fill="var(--yellow-soft)"/>
+          <text x="130" y="235" fill="var(--ink)">S</text>
+          <circle cx="38" cy="184" r="15" fill="var(--blue-soft)"/>
+          <text x="38" y="189" fill="var(--ink)">E</text>
+          <circle cx="38" cy="76" r="15" fill="var(--gold)"/>
+          <text x="38" y="81" fill="var(--ink)">C</text>
+        </g>
+        <!-- two-tone needle -->
+        <g transform="rotate(-18 130 130)">
+          <polygon points="130,58 141,130 130,130" fill="var(--gold-text)"/>
+          <polygon points="130,58 119,130 130,130" fill="var(--gold)"/>
+          <polygon points="130,202 141,130 130,130" fill="var(--ink-soft)"/>
+          <polygon points="130,202 119,130 130,130" fill="var(--paper-dim)"/>
+        </g>
+        <circle cx="130" cy="130" r="12" fill="var(--paper)" stroke="var(--ink)" stroke-width="3"/>
+      </svg>
+    </div>
+
+    <div class="meta-row">
+      <div class="meta-item">คำถาม<b>18 ข้อ</b></div>
+      <div class="meta-item">แนวโน้ม<b>6 ด้าน</b></div>
+      <div class="meta-item">ผลลัพธ์<b>อาชีพ + คณะ</b></div>
+    </div>
+
+    <button class="btn" onclick="startQuiz()">เริ่มการสำรวจ →</button>
+  </div>
+
+  <!-- QUESTION -->
+  <div class="screen question-screen" id="screen-question">
+    <div class="trail" id="trail"></div>
+    <div class="q-index" id="qIndex">คำถามที่ 01 / 18</div>
+    <div class="q-card">
+      <p class="q-text" id="qText">—</p>
+      <div class="options" id="qOptions"></div>
+    </div>
+    <div class="nav-row">
+      <button class="link-btn" id="backBtn" onclick="goBack()">← ย้อนกลับ</button>
+      <button class="link-btn" onclick="restartQuiz()">เริ่มใหม่</button>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="screen result-screen" id="screen-result">
+    <div class="result-eyebrow">ผลการสำรวจของคุณ</div>
+    <div class="result-title" id="resultTitle">—</div>
+    <div class="result-code" id="resultCode">—</div>
+
+    <div class="disclaimer-banner">
+      <span class="disclaimer-icon">📝</span>
+      <span><b>หมายเหตุ:</b> ผลที่ได้จากแบบทดสอบเป็นเพียง<b>แนวโน้ม</b>อาชีพในอนาคตเท่านั้นนะ ไม่ใช่คำตอบตายตัว ลองอ่านเป็นไอเดียเริ่มต้นได้เลย 💛</span>
+    </div>
+
+    <div class="chart-wrap">
+      <svg viewBox="0 0 320 320" width="280" height="280" id="radarSvg"></svg>
+    </div>
+
+    <div class="result-desc" id="resultDesc"></div>
+
+    <div class="section-label">รู้จัก 6 บุคลิกภาพ RIASEC</div>
+    <p class="legend-intro">แบบทดสอบนี้แบ่งแนวโน้มความถนัดออกเป็น 6 กลุ่ม ลองอ่านดูว่าแต่ละแบบเป็นคนแบบไหนบ้าง (การ์ดที่มีดาว ⭐ คือกลุ่มที่ตรงกับผลของคุณ)</p>
+    <div class="legend-grid" id="typeLegend"></div>
+
+    <div class="section-label">อาชีพที่น่าจะเหมาะกับคุณ</div>
+    <div class="chip-row" id="careerChips"></div>
+
+    <div class="section-label">คณะ / สาขาที่น่าสนใจ · แตะเพื่อดูว่าต้องเตรียมอะไร</div>
+    <div class="chip-row" id="majorChips"></div>
+    <div id="majorDetail"></div>
+
+    <div class="secondary-block" id="secondaryBlock"></div>
+
+    <div class="plan-block">
+      <div class="section-label">สร้างแผนของฉัน (WDEP)</div>
+      <p class="plan-intro">ไม่ว่าผลจะออกมาแบบไหน คุณเลือกอาชีพในฝันของตัวเองได้เสมอ เลือกคณะที่สนใจด้านล่าง แล้วลองตอบ 4 ข้อนี้เพื่อสร้างแผนของตัวเอง — ใช้แนวคิด <b>WDEP</b> ที่นักแนะแนวใช้จริง:</p>
+      <ul class="wdep-legend">
+        <li><span class="wdep-letter">W</span>Want — อยากได้ อยากเป็นอะไร</li>
+        <li><span class="wdep-letter">D</span>Doing — ตอนนี้กำลังทำอะไรอยู่</li>
+        <li><span class="wdep-letter">E</span>Evaluation — สิ่งที่ทำอยู่พาไปถึงเป้าหมายไหม</li>
+        <li><span class="wdep-letter">P</span>Plan — ขั้นตอนถัดไปที่จะลงมือทำ</li>
+      </ul>
+
+      <label class="plan-label" for="majorSelect">คณะ/สาขาที่สนใจ (เลือกอันไหนก็ได้ ไม่ต้องตรงกับผลด้านบน)</label>
+      <select id="majorSelect" class="major-select" onchange="onMajorSelect()"></select>
+      <div id="majorSelectDetail"></div>
+
+      <div class="wdep-grid">
+        <div class="wdep-item">
+          <label class="plan-label">W · อยากเป็นอะไร / เป้าหมายของฉันคือ</label>
+          <textarea id="wdepW" class="wdep-input" rows="2" placeholder="เช่น อยากเป็นครูสอนคอมพิวเตอร์ระดับมัธยม"></textarea>
+        </div>
+        <div class="wdep-item">
+          <label class="plan-label">D · ตอนนี้ฉันกำลังทำอะไรอยู่บ้าง</label>
+          <textarea id="wdepD" class="wdep-input" rows="2" placeholder="เช่น เรียนสายวิทย์-คณิต, ช่วยติวเพื่อนเรื่องคอมพิวเตอร์"></textarea>
+        </div>
+        <div class="wdep-item">
+          <label class="plan-label">E · สิ่งที่ทำอยู่ตอนนี้ พาฉันไปถึงเป้าหมายได้จริงไหม</label>
+          <textarea id="wdepE" class="wdep-input" rows="2" placeholder="เช่น ยังไม่เคยลองเขียนโปรแกรมจริงจัง อาจต้องเริ่มฝึกเพิ่ม"></textarea>
+        </div>
+        <div class="wdep-item">
+          <label class="plan-label">P · ขั้นตอนถัดไปที่จะลงมือทำ</label>
+          <textarea id="wdepP" class="wdep-input" rows="2" placeholder="เช่น ลงเรียนคอร์สเขียนโปรแกรมออนไลน์ภายในเดือนนี้"></textarea>
+        </div>
+      </div>
+
+      <button class="btn ghost" onclick="downloadPlan()">📥 ดาวน์โหลดแผนของฉัน</button>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn" onclick="restartQuiz()">สำรวจอีกครั้ง</button>
+      <button class="btn ghost" onclick="window.print()">บันทึก / พิมพ์ผล</button>
+    </div>
+
+    <div class="footnote">ผลลัพธ์นี้จัดทำขึ้นเพื่อเป็นแนวทางเบื้องต้นในการวางแผนการเรียนต่อ อ้างอิงแนวคิด Holland Code (RIASEC) ควรพิจารณาร่วมกับความสนใจส่วนตัว ผลการเรียน และการพูดคุยกับครูแนะแนวหรือผู้ปกครองประกอบด้วย</div>
+
+    <div class="finish-block">
+      <svg class="finish-mascot" viewBox="0 0 200 200">
+        <ellipse cx="100" cy="178" rx="36" ry="7" fill="rgba(0,0,0,0.12)"/>
+        <rect x="72" y="150" width="11" height="26" rx="5.5" fill="var(--gold)" transform="rotate(-10 77.5 150)"/>
+        <rect x="119" y="150" width="11" height="26" rx="5.5" fill="var(--gold)" transform="rotate(10 124.5 150)"/>
+        <rect x="122" y="60" width="4" height="46" rx="2" fill="var(--ink-soft)"/>
+        <path d="M126 62 L156 70 L126 80 Z" fill="var(--coral)"/>
+        <rect x="52" y="98" width="11" height="30" rx="5.5" fill="var(--gold)" transform="rotate(-25 57.5 98)"/>
+        <circle cx="100" cy="98" r="44" fill="var(--paper)" stroke="var(--gold)" stroke-width="5"/>
+        <circle cx="100" cy="98" r="35" fill="none" stroke="var(--paper-dim)" stroke-width="2" stroke-dasharray="3 4"/>
+        <polygon points="100,44 108,64 100,60 92,64" fill="var(--coral)"/>
+        <circle cx="100" cy="64" r="5" fill="var(--teal)"/>
+        <circle cx="86" cy="96" r="5" fill="var(--ink)"/>
+        <circle cx="114" cy="96" r="5" fill="var(--ink)"/>
+        <circle cx="88" cy="94" r="1.4" fill="#fff"/>
+        <circle cx="116" cy="94" r="1.4" fill="#fff"/>
+        <ellipse cx="76" cy="108" rx="6.5" ry="4" fill="var(--coral)" opacity="0.55"/>
+        <ellipse cx="124" cy="108" rx="6.5" ry="4" fill="var(--coral)" opacity="0.55"/>
+        <path d="M88 110 Q100 120 112 110" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="finish-title">🏁 เข็มทิศพิชิตเส้นชัย</div>
+      <p class="finish-text">จากการทำแบบทดสอบวัดอาชีพ น้องได้พบความถนัด ความสนใจ และความสามารถในตนเอง ซึ่งสามารถนำไปต่อยอดเพื่อวางแผนแนวทางการเรียนต่อในอนาคต และวางแผนเส้นทางสู่อนาคตได้อย่างเหมาะสม ตอนนี้น้อง ๆ มีเป้าหมายและแผนการแล้ว เหลือเพียงลงมือทำอย่างตั้งใจ ค่อย ๆ พัฒนาและเรียนรู้ไปทีละนิด ก้าวตามแผนที่วางไว้ ถ้าไม่ตรงตามที่คาด ก็เริ่มใหม่ได้เสมอนะ 🌟 เชื่อว่าน้อง ๆ ทุกคนมีศักยภาพที่จะสร้างอนาคตของตัวเองให้ประสบความสำเร็จได้ 💪💖</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const TYPES = {
+  R: {
+    name:"นักปฏิบัติ", en:"Realistic", angle:-90, color:"#FFD87B",
+    desc:"เป็นคนที่เน้นการปฏิบัติจริง ชอบลงมือทำ ชอบทำงานกับเครื่องมือ เครื่องจักร และกลางแจ้ง",
+    careers:["วิศวกร","ช่างเทคนิค","นักบิน","สัตวแพทย์","นักกีฬาอาชีพ","เชฟ","เกษตรกรสมัยใหม่","สถาปนิกภูมิทัศน์"],
+    majors:["วิศวกรรมศาสตร์","เทคโนโลยีอุตสาหกรรม","สัตวแพทยศาสตร์","วิทยาศาสตร์การกีฬา","เกษตรศาสตร์"]
+  },
+  I: {
+    name:"นักวิเคราะห์", en:"Investigative", angle:-30, color:"#8FC1CC",
+    desc:"เป็นคนที่ชอบวิเคราะห์ ช่างสงสัย เก่งในการวิจัย การแก้ปัญหา และการทำงานกับแนวคิด",
+    careers:["นักวิทยาศาสตร์","แพทย์","เภสัชกร","นักวิจัย","นักพัฒนาซอฟต์แวร์","นักวิเคราะห์ข้อมูล","นักดาราศาสตร์"],
+    majors:["แพทยศาสตร์","วิทยาศาสตร์","วิศวกรรมคอมพิวเตอร์","เภสัชศาสตร์","สถิติ/วิทยาการข้อมูล"]
+  },
+  A: {
+    name:"นักสร้างสรรค์", en:"Artistic", angle:30, color:"#FFB6A3",
+    desc:"เป็นคนที่ชอบแสดงออก มีจินตนาการ และเป็นอิสระ เติบโตได้ดีในสภาพแวดล้อมที่ยืดหยุ่นและสร้างสรรค์",
+    careers:["นักออกแบบกราฟิก","สถาปนิก","นักเขียน","ช่างภาพ","นักดนตรี","ผู้กำกับภาพยนตร์","นักออกแบบแฟชั่น"],
+    majors:["ศิลปกรรมศาสตร์","สถาปัตยกรรมศาสตร์","นิเทศศาสตร์","ดุริยางคศาสตร์","มัณฑนศิลป์"]
+  },
+  S: {
+    name:"นักสังคม", en:"Social", angle:90, color:"#FEE8A3",
+    desc:"เป็นคนที่มีความเห็นอกเห็นใจและชอบร่วมมือ พบความสุขในการช่วยเหลือ การสอน และการเชื่อมโยงกับผู้อื่น",
+    careers:["ครู/อาจารย์","พยาบาล","นักจิตวิทยา","นักสังคมสงเคราะห์","นักกิจกรรมบำบัด","ครูแนะแนว"],
+    majors:["ครุศาสตร์/ศึกษาศาสตร์","พยาบาลศาสตร์","จิตวิทยา","สังคมสงเคราะห์ศาสตร์","สาธารณสุขศาสตร์"]
+  },
+  E: {
+    name:"นักบริหาร", en:"Enterprising", angle:150, color:"#B8D8C5",
+    desc:"เป็นคนที่มีความทะเยอทะยาน กระตือรือร้น สนุกกับการมีอิทธิพล การโน้มน้าว และการจัดการโครงการหรือผู้คน",
+    careers:["ผู้ประกอบการ","นักการตลาด","ผู้จัดการฝ่ายขาย","ทนายความ","นักการทูต","ที่ปรึกษาธุรกิจ"],
+    majors:["บริหารธุรกิจ","นิติศาสตร์","รัฐศาสตร์","การตลาด","เศรษฐศาสตร์"]
+  },
+  C: {
+    name:"นักจัดระเบียบ", en:"Conventional", angle:210, color:"#A9C9E0",
+    desc:"เป็นคนที่เน้นรายละเอียด มีระเบียบ เก่งในสภาพแวดล้อมที่มีโครงสร้างซึ่งเกี่ยวข้องกับข้อมูลและกระบวนการ",
+    careers:["นักบัญชี","ผู้ตรวจสอบบัญชี","นักการธนาคาร","ผู้ดูแลระบบฐานข้อมูล","เลขานุการบริหาร","เจ้าหน้าที่การเงิน"],
+    majors:["บัญชี","การเงินการธนาคาร","ระบบสารสนเทศ","สถิติประยุกต์","การจัดการทรัพยากรมนุษย์"]
+  }
+};
+
+// คำแนะนำเชิงลึกรายคณะ/สาขา — ใช้ตอบคำถามแบบ "อยากเป็น X ต้องเรียนอะไร"
+// จงใจไม่ใส่คะแนนตัดสิน/รอบ TCAS เพราะเปลี่ยนทุกปี ให้เน้นสิ่งที่ทำได้เลยตอนนี้แทน
+const MAJOR_INFO = {
+  "วิศวกรรมศาสตร์": {
+    subjects:["คณิตศาสตร์","ฟิสิกส์","ภาษาอังกฤษ"],
+    skills:["การแก้ปัญหาเชิงตรรกะ","การเขียนโปรแกรมเบื้องต้น","การทำงานเป็นทีมในโปรเจกต์"],
+    portfolio:["ผลงานประกอบ/สิ่งประดิษฐ์ที่เคยทำ","ใบประกาศค่ายวิทย์-คณิตหรือหุ่นยนต์"]
+  },
+  "เทคโนโลยีอุตสาหกรรม": {
+    subjects:["คณิตศาสตร์","ฟิสิกส์","การงานอาชีพ"],
+    skills:["การใช้เครื่องมือ/อุปกรณ์ช่างเบื้องต้น","การอ่านแบบทางเทคนิค"],
+    portfolio:["ผลงานซ่อม/ประกอบชิ้นงาน","ประสบการณ์ฝึกงานหรือกิจกรรมช่าง"]
+  },
+  "สัตวแพทยศาสตร์": {
+    subjects:["ชีววิทยา","เคมี","คณิตศาสตร์"],
+    skills:["การดูแลสัตว์เบื้องต้น","ความละเอียดรอบคอบและความอดทน"],
+    portfolio:["ประสบการณ์อาสาหรือดูแลสัตว์","กิจกรรมค่ายวิทยาศาสตร์ชีวภาพ"]
+  },
+  "วิทยาศาสตร์การกีฬา": {
+    subjects:["ชีววิทยา","พลศึกษา","สุขศึกษา"],
+    skills:["ความรู้พื้นฐานกายวิภาค/สรีรวิทยา","การวางแผนโปรแกรมฝึกซ้อม"],
+    portfolio:["ประวัติการเล่นกีฬาหรือเป็นนักกีฬา","ใบประกาศการแข่งขัน"]
+  },
+  "เกษตรศาสตร์": {
+    subjects:["ชีววิทยา","เคมี","ภูมิศาสตร์"],
+    skills:["ความรู้ด้านพืช/สัตว์เบื้องต้น","การทดลองทางวิทยาศาสตร์"],
+    portfolio:["ผลงานโครงงานเกษตรหรือสิ่งแวดล้อม","ประสบการณ์กิจกรรมเกษตร"]
+  },
+  "แพทยศาสตร์": {
+    subjects:["ชีววิทยา","เคมี","คณิตศาสตร์"],
+    skills:["การวิเคราะห์เชิงระบบ","ความอดทนต่อความกดดัน"],
+    portfolio:["กิจกรรมจิตอาสาด้านสุขภาพ","ผลการเรียนสายวิทย์-คณิตที่แข็งแรง"]
+  },
+  "วิทยาศาสตร์": {
+    subjects:["คณิตศาสตร์","ฟิสิกส์/เคมี/ชีววิทยา (ตามสาขา)"],
+    skills:["การตั้งสมมติฐานและทดลอง","การวิเคราะห์ข้อมูล"],
+    portfolio:["ผลงานโครงงานวิทยาศาสตร์","ประกาศนียบัตรค่ายวิทย์"]
+  },
+  "วิศวกรรมคอมพิวเตอร์": {
+    subjects:["คณิตศาสตร์","ฟิสิกส์","ภาษาอังกฤษ"],
+    skills:["การเขียนโปรแกรม","ตรรกะและการแก้ปัญหา"],
+    portfolio:["โปรเจกต์เขียนโค้ดหรือแอปที่เคยทำ","ผลงานจากการแข่งขันเขียนโปรแกรม"]
+  },
+  "เภสัชศาสตร์": {
+    subjects:["เคมี","ชีววิทยา","คณิตศาสตร์"],
+    skills:["ความละเอียดรอบคอบ","การจดจำเชิงระบบ"],
+    portfolio:["กิจกรรมจิตอาสาด้านสุขภาพ","เกรดวิชาเคมี-ชีวะที่แข็งแรง"]
+  },
+  "สถิติ/วิทยาการข้อมูล": {
+    subjects:["คณิตศาสตร์","คอมพิวเตอร์"],
+    skills:["การวิเคราะห์ข้อมูล","พื้นฐานการเขียนโปรแกรม (Python/Excel)"],
+    portfolio:["โปรเจกต์วิเคราะห์ข้อมูลหรือกราฟที่เคยทำ"]
+  },
+  "ศิลปกรรมศาสตร์": {
+    subjects:["ศิลปะ","สังคมศึกษา"],
+    skills:["การวาดภาพ/ออกแบบ","การเล่าเรื่องผ่านภาพ"],
+    portfolio:["แฟ้มผลงานศิลปะ (portfolio) ที่หลากหลาย"]
+  },
+  "สถาปัตยกรรมศาสตร์": {
+    subjects:["คณิตศาสตร์","ศิลปะ","ฟิสิกส์"],
+    skills:["การร่างแบบ","การมองภาพสามมิติ"],
+    portfolio:["ผลงานออกแบบ/สเก็ตช์ภาพ","แบบจำลอง (โมเดล) ที่เคยทำ"]
+  },
+  "นิเทศศาสตร์": {
+    subjects:["ภาษาไทย","ภาษาอังกฤษ","สังคมศึกษา"],
+    skills:["การเขียน/การนำเสนอ","การผลิตสื่อเบื้องต้น"],
+    portfolio:["ผลงานเขียน คลิปวิดีโอ หรือสื่อที่เคยทำ"]
+  },
+  "ดุริยางคศาสตร์": {
+    subjects:["ดนตรี","ศิลปะ"],
+    skills:["ทักษะเครื่องดนตรีหรือขับร้อง","ทฤษฎีดนตรีเบื้องต้น"],
+    portfolio:["คลิปการแสดง","ใบประกาศการประกวดดนตรี"]
+  },
+  "มัณฑนศิลป์": {
+    subjects:["ศิลปะ","คณิตศาสตร์"],
+    skills:["การออกแบบพื้นที่/ผลิตภัณฑ์","การใช้โปรแกรมออกแบบเบื้องต้น"],
+    portfolio:["ผลงานออกแบบหรือสเก็ตช์ไอเดีย"]
+  },
+  "ครุศาสตร์/ศึกษาศาสตร์": {
+    subjects:["วิชาตามสาขาที่อยากสอน (เช่น อยากเป็นครูคอมพิวเตอร์ → เน้นคอมพิวเตอร์/เทคโนโลยีสารสนเทศ)","คณิตศาสตร์","ภาษาไทย"],
+    skills:["การสื่อสาร/อธิบายให้เข้าใจง่าย","ความอดทนและการจัดการห้องเรียน"],
+    portfolio:["ประสบการณ์สอนพิเศษ/ติวเพื่อน","กิจกรรมค่ายอาสาสอนหนังสือ"],
+    note:"อยากเป็นครูคอมพิวเตอร์โดยเฉพาะ ให้มองหาสาขา “ครุศาสตร์คอมพิวเตอร์” หรือ “เทคโนโลยีการศึกษา” ในคณะครุศาสตร์/ศึกษาศาสตร์ของแต่ละมหาวิทยาลัย"
+  },
+  "พยาบาลศาสตร์": {
+    subjects:["ชีววิทยา","เคมี","คณิตศาสตร์"],
+    skills:["การดูแลผู้อื่นด้วยความเอาใจใส่","การทำงานภายใต้ความกดดัน"],
+    portfolio:["กิจกรรมจิตอาสาด้านสุขภาพหรือดูแลผู้สูงอายุ"]
+  },
+  "จิตวิทยา": {
+    subjects:["ภาษาไทย","ภาษาอังกฤษ","สังคมศึกษา"],
+    skills:["การฟังและเข้าใจผู้อื่น","การวิเคราะห์พฤติกรรม"],
+    portfolio:["กิจกรรมอาสาให้คำปรึกษาเพื่อน","ประสบการณ์ชมรมจิตวิทยา"]
+  },
+  "สังคมสงเคราะห์ศาสตร์": {
+    subjects:["สังคมศึกษา","ภาษาไทย"],
+    skills:["การทำงานร่วมกับชุมชน","ความเข้าใจปัญหาสังคม"],
+    portfolio:["กิจกรรมอาสาช่วยเหลือชุมชน"]
+  },
+  "สาธารณสุขศาสตร์": {
+    subjects:["ชีววิทยา","สุขศึกษา"],
+    skills:["ความรู้ด้านสุขภาพชุมชนเบื้องต้น","การสื่อสารเชิงรณรงค์"],
+    portfolio:["กิจกรรมรณรงค์สุขภาพหรืออาสาสาธารณสุข"]
+  },
+  "บริหารธุรกิจ": {
+    subjects:["คณิตศาสตร์","ภาษาอังกฤษ","สังคมศึกษา"],
+    skills:["การวางแผนและบริหารจัดการ","การทำงานเป็นทีม"],
+    portfolio:["ประสบการณ์ทำโปรเจกต์ธุรกิจจำลอง","ตำแหน่งในชมรม"]
+  },
+  "นิติศาสตร์": {
+    subjects:["ภาษาไทย","สังคมศึกษา","ภาษาอังกฤษ"],
+    skills:["การอ่านตีความและโต้แย้งอย่างมีเหตุผล","การเขียนเชิงวิเคราะห์"],
+    portfolio:["ผลงานโต้วาที หรือกิจกรรมด้านกฎหมาย/รัฐศาสตร์"]
+  },
+  "รัฐศาสตร์": {
+    subjects:["สังคมศึกษา","ภาษาไทย","ภาษาอังกฤษ"],
+    skills:["การวิเคราะห์ประเด็นสังคม/การเมือง","การพูดในที่สาธารณะ"],
+    portfolio:["กิจกรรมสภานักเรียนหรือโต้วาที"]
+  },
+  "การตลาด": {
+    subjects:["คณิตศาสตร์","ภาษาอังกฤษ","สังคมศึกษา"],
+    skills:["ความคิดสร้างสรรค์เชิงธุรกิจ","การใช้สื่อโซเชียลมีเดีย"],
+    portfolio:["ผลงานแคมเปญหรือคอนเทนต์ที่เคยทำ"]
+  },
+  "เศรษฐศาสตร์": {
+    subjects:["คณิตศาสตร์","สังคมศึกษา"],
+    skills:["การวิเคราะห์ตัวเลขและแนวโน้ม","การอ่านสถานการณ์เศรษฐกิจ"],
+    portfolio:["โครงงานวิเคราะห์ข้อมูลเศรษฐกิจหรือธุรกิจ"]
+  },
+  "บัญชี": {
+    subjects:["คณิตศาสตร์"],
+    skills:["ความละเอียดรอบคอบกับตัวเลข","การใช้โปรแกรม Excel เบื้องต้น"],
+    portfolio:["เกรดวิชาคณิตศาสตร์ที่แข็งแรง","ประสบการณ์ทำบัญชีชมรม/กิจกรรม"]
+  },
+  "การเงินการธนาคาร": {
+    subjects:["คณิตศาสตร์","สังคมศึกษา"],
+    skills:["การวิเคราะห์การเงินเบื้องต้น","การวางแผนงบประมาณ"],
+    portfolio:["โครงงานวางแผนการเงินหรือการลงทุนจำลอง"]
+  },
+  "ระบบสารสนเทศ": {
+    subjects:["คณิตศาสตร์","คอมพิวเตอร์"],
+    skills:["พื้นฐานการเขียนโปรแกรม","การจัดการฐานข้อมูลเบื้องต้น"],
+    portfolio:["โปรเจกต์ระบบหรือเว็บไซต์ที่เคยทำ"]
+  },
+  "สถิติประยุกต์": {
+    subjects:["คณิตศาสตร์"],
+    skills:["การวิเคราะห์ข้อมูลเชิงสถิติ","การใช้โปรแกรมคำนวณ"],
+    portfolio:["โครงงานวิเคราะห์ข้อมูล"]
+  },
+  "การจัดการทรัพยากรมนุษย์": {
+    subjects:["ภาษาไทย","สังคมศึกษา","ภาษาอังกฤษ"],
+    skills:["การสื่อสารและประสานงาน","ความเข้าใจพฤติกรรมคน"],
+    portfolio:["ประสบการณ์เป็นแกนนำจัดกิจกรรม/ชมรม"]
+  }
+};
+
+const QUESTIONS = [
+  {type:"R", text:"ฉันชอบลงมือทำสิ่งต่าง ๆ ด้วยมือ เช่น ประกอบ ซ่อม หรือสร้างสิ่งของ"},
+  {type:"I", text:"ฉันชอบตั้งคำถามและหาคำตอบด้วยการค้นคว้าหรือทดลอง"},
+  {type:"A", text:"ฉันชอบแสดงออกความคิดผ่านงานศิลปะ ดนตรี การเขียน หรือการออกแบบ"},
+  {type:"S", text:"ฉันรู้สึกมีความสุขเมื่อได้ช่วยเหลือหรือให้คำแนะนำผู้อื่น"},
+  {type:"E", text:"ฉันชอบเป็นผู้นำและกล้าตัดสินใจในสถานการณ์ต่าง ๆ"},
+  {type:"C", text:"ฉันชอบทำงานที่มีระบบ ระเบียบ และขั้นตอนที่ชัดเจน"},
+
+  {type:"R", text:"ฉันสนุกกับกิจกรรมกลางแจ้งหรือการใช้แรงกาย มากกว่านั่งอยู่กับที่นาน ๆ"},
+  {type:"I", text:"ฉันสนุกกับการแก้โจทย์ปัญหาที่ซับซ้อน มากกว่าทำงานที่มีขั้นตอนตายตัว"},
+  {type:"A", text:"ฉันรู้สึกอึดอัดเมื่อต้องทำงานตามกฎเกณฑ์ที่ตายตัวจนเกินไป"},
+  {type:"S", text:"ฉันชอบทำงานเป็นทีมและพูดคุยแลกเปลี่ยนความคิดเห็นกับคนอื่น"},
+  {type:"E", text:"ฉันสนุกกับการโน้มน้าวหรือนำเสนอความคิดให้คนอื่นเห็นด้วย"},
+  {type:"C", text:"ฉันรู้สึกสบายใจเมื่อได้จัดการข้อมูล เอกสาร หรือตารางงานให้เป็นระเบียบ"},
+
+  {type:"R", text:"ฉันชอบเรียนรู้วิธีการทำงานของเครื่องจักรหรืออุปกรณ์ต่าง ๆ"},
+  {type:"I", text:"ฉันชอบวิเคราะห์ข้อมูล ตัวเลข หรือปรากฏการณ์ต่าง ๆ อย่างละเอียด"},
+  {type:"A", text:"ฉันชอบจินตนาการและสร้างสรรค์สิ่งใหม่ ๆ ที่ไม่เหมือนใคร"},
+  {type:"S", text:"ฉันสนใจความรู้สึกและปัญหาของคนรอบข้างอยู่เสมอ"},
+  {type:"E", text:"ฉันมีความฝันอยากเริ่มต้นทำธุรกิจหรือโครงการเป็นของตัวเอง"},
+  {type:"C", text:"ฉันให้ความสำคัญกับความถูกต้องแม่นยำในรายละเอียดของงาน"}
+];
+
+const OPTION_LABELS = ["ไม่ใช่ฉันเลย","ค่อนข้างไม่ใช่","ค่อนข้างใช่","ใช่ฉันมาก"];
+
+let answers = new Array(QUESTIONS.length).fill(null);
+let current = 0;
+
+function el(id){ return document.getElementById(id); }
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  el(id).classList.add('active');
+}
+
+function startQuiz(){
+  answers = new Array(QUESTIONS.length).fill(null);
+  current = 0;
+  buildTrail();
+  showScreen('screen-question');
+  renderQuestion();
+}
+
+function restartQuiz(){
+  answers = new Array(QUESTIONS.length).fill(null);
+  current = 0;
+  setNeedle(null);
+  showScreen('screen-intro');
+}
+
+function buildTrail(){
+  const trail = el('trail');
+  trail.innerHTML = "";
+  QUESTIONS.forEach(()=>{
+    const i = document.createElement('i');
+    trail.appendChild(i);
+  });
+}
+
+function updateTrail(){
+  const items = el('trail').children;
+  for(let i=0;i<items.length;i++){
+    items[i].className = i < current ? 'done' : (i===current ? 'current':'');
+  }
+}
+
+function renderQuestion(){
+  const q = QUESTIONS[current];
+  el('qIndex').textContent = `คำถามที่ ${String(current+1).padStart(2,'0')} / ${QUESTIONS.length}`;
+  el('qText').textContent = q.text;
+  const opts = el('qOptions');
+  opts.innerHTML = "";
+  OPTION_LABELS.forEach((label, val)=>{
+    const b = document.createElement('button');
+    b.className = 'opt-btn';
+    b.innerHTML = `<span class="opt-dot"></span><span>${label}</span>`;
+    b.onclick = ()=> selectAnswer(val);
+    opts.appendChild(b);
+  });
+  el('backBtn').style.visibility = current===0 ? 'hidden' : 'visible';
+  updateTrail();
+}
+
+function selectAnswer(val){
+  answers[current] = val;
+  updateNeedleFromProgress();
+  if(current < QUESTIONS.length - 1){
+    current++;
+    renderQuestion();
+  } else {
+    computeResult();
+  }
+}
+
+function goBack(){
+  if(current>0){
+    current--;
+    renderQuestion();
+  }
+}
+
+function currentScores(){
+  const scores = {R:0,I:0,A:0,S:0,E:0,C:0};
+  QUESTIONS.forEach((q,i)=>{
+    if(answers[i]!==null) scores[q.type] += answers[i];
+  });
+  return scores;
+}
+
+function updateNeedleFromProgress(){
+  const scores = currentScores();
+  const total = Object.values(scores).reduce((a,b)=>a+b,0);
+  if(total===0){ setNeedle(null); return; }
+  let top = Object.keys(scores).reduce((a,b)=> scores[a]>=scores[b]?a:b);
+  setNeedle(TYPES[top].angle);
+}
+
+function setNeedle(angle){
+  // needle SVG points "up" at 0deg CSS rotation, which corresponds to
+  // -90 in our angle convention (0=right,90=down,180=left,-90=up).
+  // Shift by +90 so the visual direction matches each type's compass angle.
+  const needle = document.getElementById('needle');
+  if(angle===null){
+    needle.style.transform = 'rotate(0deg)';
+  } else {
+    needle.style.transform = `rotate(${angle+90}deg)`;
+  }
+}
+
+let resultState = null; // holds top type + code for the plan download
+
+function computeResult(){
+  const scores = currentScores();
+  const maxPerType = 9; // 3 questions x 3 points
+  const order = Object.keys(scores).sort((a,b)=> scores[b]-scores[a]);
+  const topKey = order[0];
+  const secondKey = order[1];
+  const top = TYPES[topKey];
+  const second = TYPES[secondKey];
+
+  setNeedle(top.angle);
+
+  el('resultTitle').textContent = `${top.name} (${top.en})`;
+  el('resultCode').textContent = `รหัสเข็มทิศของคุณ: ${order.slice(0,3).join('')}`;
+
+  el('resultDesc').innerHTML = `<b>${top.name}</b>${top.desc}`;
+
+  el('careerChips').innerHTML = top.careers.map(c=>`<span class="chip">${c}</span>`).join('');
+  el('majorChips').innerHTML = top.majors.map(c=>
+    `<span class="chip clickable" onclick="showMajorDetail('${c}', this)">${c}</span>`
+  ).join('');
+  el('majorDetail').innerHTML = "";
+
+  if(scores[secondKey] > 0){
+    el('secondaryBlock').innerHTML = `
+      <div class="secondary-title">แนวโน้มรอง: <span>${second.name} (${second.en})</span></div>
+      <div class="secondary-desc">${second.desc}</div>
+      <div class="chip-row">${second.careers.slice(0,5).map(c=>`<span class="chip">${c}</span>`).join('')}</div>
+    `;
+  } else {
+    el('secondaryBlock').innerHTML = "";
+  }
+
+  drawRadar(scores, maxPerType);
+  renderLegend(topKey, scores[secondKey] > 0 ? secondKey : null);
+
+  resultState = { code: order.slice(0,3).join(''), topName: `${top.name} (${top.en})` };
+  populateMajorSelect(top.majors[0]);
+  el('wdepD').value = "";
+  el('wdepE').value = "";
+  el('wdepP').value = "";
+
+  showScreen('screen-result');
+}
+
+function renderLegend(matchKey, secondKey){
+  const order = ["R","I","A","S","E","C"];
+  el('typeLegend').innerHTML = order.map(k=>{
+    const t = TYPES[k];
+    const isMatch = k === matchKey;
+    const isSecond = k === secondKey;
+    const star = isMatch ? '<span class="legend-star">⭐ ผลของคุณ</span>' : (isSecond ? '<span class="legend-star">✨ แนวโน้มรอง</span>' : "");
+    return `
+      <div class="legend-card ${isMatch || isSecond ? 'is-match' : ''}">
+        <div class="legend-badge">${k} · ${t.en}</div>
+        <div class="legend-name">${t.name}</div>
+        <div class="legend-desc">${t.desc}</div>
+        ${star}
+      </div>`;
+  }).join('');
+}
+
+function detailHTML(name){
+  const info = MAJOR_INFO[name];
+  if(!info) return "";
+  return `
+    <div class="detail-card">
+      <h4>${name}</h4>
+      <div class="detail-row"><b>วิชาที่ควรเน้น</b>${info.subjects.join(' · ')}</div>
+      <div class="detail-row"><b>ทักษะที่ควรฝึก</b>${info.skills.join(' · ')}</div>
+      <div class="detail-row"><b>เตรียมพอร์ต</b>${info.portfolio.join(' · ')}</div>
+      ${info.note ? `<div class="detail-note">${info.note}</div>` : ""}
+    </div>`;
+}
+
+function showMajorDetail(name, btnEl){
+  document.querySelectorAll('#majorChips .chip').forEach(c=>c.classList.remove('active'));
+  if(btnEl) btnEl.classList.add('active');
+  el('majorDetail').innerHTML = detailHTML(name);
+}
+
+function populateMajorSelect(defaultMajor){
+  const select = el('majorSelect');
+  select.innerHTML = "";
+  Object.keys(TYPES).forEach(k=>{
+    const group = document.createElement('optgroup');
+    group.label = `${TYPES[k].name} (${k})`;
+    TYPES[k].majors.forEach(m=>{
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      if(m === defaultMajor) opt.selected = true;
+      group.appendChild(opt);
+    });
+    select.appendChild(group);
+  });
+  onMajorSelect();
+}
+
+function onMajorSelect(){
+  const name = el('majorSelect').value;
+  el('majorSelectDetail').innerHTML = detailHTML(name);
+  if(!el('wdepW').value){
+    el('wdepW').value = `อยากเรียนต่อสาย ${name}`;
+  }
+}
+
+function downloadPlan(){
+  const major = el('majorSelect').value;
+  const w = el('wdepW').value.trim() || "-";
+  const d = el('wdepD').value.trim() || "-";
+  const e = el('wdepE').value.trim() || "-";
+  const p = el('wdepP').value.trim() || "-";
+  const info = MAJOR_INFO[major] || {subjects:[],skills:[],portfolio:[]};
+
+  const text =
+`แผนของฉัน — เข็มทิศอาชีพ
+========================
+ผลแนวโน้มจากแบบสำรวจ: ${resultState ? resultState.topName + " (รหัส " + resultState.code + ")" : "-"}
+หมายเหตุ: ผลที่ได้จากแบบทดสอบเป็นเพียงแนวโน้มอาชีพในอนาคตเท่านั้น ไม่ใช่คำตอบตายตัว
+
+คณะ/สาขาที่สนใจ: ${major}
+วิชาที่ควรเน้น: ${info.subjects.join(', ')}
+ทักษะที่ควรฝึก: ${info.skills.join(', ')}
+สิ่งที่ควรเตรียมสำหรับพอร์ต: ${info.portfolio.join(', ')}
+
+--- แผน WDEP (เครื่องมือวางแผนเป้าหมายจาก Reality Therapy) ---
+W (Want - อยากได้/อยากเป็นอะไร): ${w}
+D (Doing - ตอนนี้กำลังทำอะไรอยู่): ${d}
+E (Evaluation - สิ่งที่ทำอยู่พาไปถึงเป้าหมายไหม): ${e}
+P (Plan - ขั้นตอนถัดไปที่จะลงมือทำ): ${p}
+
+เข็มทิศพิชิตเส้นชัย 🏁
+ตอนนี้มีเป้าหมายและแผนการแล้ว เหลือเพียงลงมือทำอย่างตั้งใจ ค่อย ๆ พัฒนาไปทีละนิด
+ถ้าไม่ตรงตามที่คาด ก็เริ่มใหม่ได้เสมอนะ เชื่อว่าน้อง ๆ มีศักยภาพที่จะสร้างอนาคตของตัวเองให้สำเร็จได้ 💪
+`;
+
+  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'แผนของฉัน.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function drawRadar(scores, maxVal){
+  const size = 320, cx = size/2, cy = size/2, R = 120;
+  const order = ["R","I","A","S","E","C"];
+  const svg = el('radarSvg');
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+  let parts = "";
+
+  function pt(angleDeg, r){
+    const a = (angleDeg - 90) * Math.PI/180;
+    return [cx + r*Math.cos(a), cy + r*Math.sin(a)];
+  }
+
+  // grid rings
+  [0.25,0.5,0.75,1].forEach(f=>{
+    let ring = "";
+    order.forEach((k,i)=>{
+      const ang = TYPES[k].angle + 90; // shift so R sits at top consistent with pt() using -90 offset base
+      const [x,y] = pt(TYPES[k].angle+90, R*f);
+      ring += (ring===""?"M":"L") + x.toFixed(1) + "," + y.toFixed(1) + " ";
+    });
+    ring += "Z";
+    parts += `<path d="${ring}" fill="none" stroke="rgba(62,86,97,0.28)" stroke-width="1.5"/>`;
+  });
+
+  // axis lines + labels
+  order.forEach(k=>{
+    const [x,y] = pt(TYPES[k].angle+90, R);
+    parts += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(62,86,97,0.32)" stroke-width="1.5"/>`;
+    const [lx,ly] = pt(TYPES[k].angle+90, R+22);
+    parts += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="var(--ink)" font-family="Space Mono" font-size="14" font-weight="700" opacity="1">${k}</text>`;
+  });
+
+  // data polygon
+  let dataPath = "";
+  order.forEach(k=>{
+    const f = Math.max(0.06, scores[k]/maxVal);
+    const [x,y] = pt(TYPES[k].angle+90, R*f);
+    dataPath += (dataPath===""?"M":"L") + x.toFixed(1) + "," + y.toFixed(1) + " ";
+  });
+  dataPath += "Z";
+  parts += `<path d="${dataPath}" fill="rgba(255,216,123,0.45)" stroke="#C9862A" stroke-width="3.5" stroke-linejoin="round"/>`;
+
+  // dots
+  order.forEach(k=>{
+    const f = Math.max(0.06, scores[k]/maxVal);
+    const [x,y] = pt(TYPES[k].angle+90, R*f);
+    parts += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="${TYPES[k].color}" stroke="var(--paper)" stroke-width="2"/>`;
+  });
+
+  svg.innerHTML = parts;
+}
+</script>
+</body>
+</html>
